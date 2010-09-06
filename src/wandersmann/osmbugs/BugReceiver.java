@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,43 +19,14 @@
  *  feel free to contact the author.
  */
 
-package corona;
-
-import corona.io.TileCache;
-import javax.microedition.lcdui.Display;
-import javax.microedition.midlet.MIDlet;
+package wandersmann.osmbugs;
 
 /**
+ *
  * @author Christian Lins
  */
-public class CoronaMIDlet extends MIDlet {
+public interface BugReceiver {
 
-	private static CoronaMIDlet instance;
+	void receiveBug(Bug bug);
 
-	public static CoronaMIDlet getInstance() {
-		return instance;
-	}
-
-	private Map map = new Map();
-
-	public Map getMap() {
-		return this.map;
-	}
-
-	public void startApp() {
-		instance = this;
-		Display display = Display.getDisplay(this);
-		if(TileCache.getInstance().hasErrors()) {
-			display.setCurrent(new RootSelectionDialog());
-		} else {
-			display.setCurrent(this.map);
-		}
-	}
-
-	public void pauseApp() {
-	}
-
-	public void destroyApp(boolean unconditional) {
-		instance.notifyDestroyed();
-	}
 }

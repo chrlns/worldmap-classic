@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,17 +19,16 @@
  *  feel free to contact the author.
  */
 
-package corona.osmbugs;
+package wandersmann.osmbugs;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 
 /**
- *
+ * Loads Bug information from OpenStreetBugs.
  * @author Christian Lins
  */
 public class BugLoader extends Thread {

@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,39 @@
  *  feel free to contact the author.
  */
 
-package corona.osmbugs;
+package wandersmann.io;
+
+import java.util.Vector;
+import javax.microedition.lcdui.Image;
 
 /**
  *
  * @author Christian Lins
  */
-public interface BugReceiver {
+public interface TileCache {
 
-	void receiveBug(Bug bug);
+	public static final int SOURCE_OPENSTREETMAP = 1;
+	public static final int SOURCE_OPENCYCLEMAP = 2;
 
+	boolean initialize();
+
+	boolean isEnabled();
+
+	/**
+	 * Loads the tile identified through the given parameter.
+	 * If obs is null the image is loaded synchronously.
+	 * @param zoom
+	 * @param x
+	 * @param y
+	 * @param mapSource
+	 * @param goDown
+	 */
+	Image loadImage(int zoom, int x, int y, int mapSource, boolean goDown, Vector observer);
+
+	/**
+	 * Causes the cache to free unused elements.
+	 */
+	void lowMemAction();
+
+	void shutdown();
 }

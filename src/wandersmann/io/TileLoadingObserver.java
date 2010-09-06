@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,12 +19,24 @@
  *  feel free to contact the author.
  */
 
-package corona;
+package wandersmann.io;
+
+import javax.microedition.lcdui.Image;
 
 /**
  *
- * @author chris
+ * @author Christian Lins
  */
-public class Config {
+public interface TileLoadingObserver {
+
+	/**
+	 * Called after the image is completely loaded.
+	 * @param img
+	 * @param zoom
+	 * @param x
+	 * @param y
+	 * @param mapSource
+	 */
+	void tileLoaded(Image img, int zoom, int x, int y, int mapSource, byte[] raw);
 
 }

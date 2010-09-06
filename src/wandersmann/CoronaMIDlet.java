@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,43 +19,42 @@
  *  feel free to contact the author.
  */
 
-package corona.util;
+package wandersmann;
 
-import java.util.Vector;
+import javax.microedition.lcdui.Display;
+import javax.microedition.midlet.MIDlet;
 
 /**
- *
+ * The main midlet of the application. For historic reasons the name is still
+ * CoronaMIDlet.
  * @author Christian Lins
  */
-public final class StringUtils {
+public class CoronaMIDlet extends MIDlet {
 
-	/**
-	 * J2ME implementation of String.split().
-	 * @param str
-	 * @param delim
-	 * @return
-	 */
-	public static String[] split(String str, String delim) {
-		Vector cache = new Vector();
-		int start = 0;
-		int end = 0;
-		while(end < str.length()) {
-			end = str.indexOf(delim, start);
-			if(end == -1) {
-				if(start >= str.length()) {
-					start = str.length() - 1;
-				}
-				end = str.length();
-			}
-			String sub = str.substring(start, end);
-			cache.addElement(sub);
-			start = end + 1;
-		}
+	private static CoronaMIDlet instance;
 
-		String[] array = new String[cache.size()];
-		for(int n = 0; n < array.length; n++) {
-			array[n] = (String)cache.elementAt(n);
-		}
-		return array;
+	public static CoronaMIDlet getInstance() {
+		return instance;
 	}
+
+	private Map map = new Map();
+
+	public Map getMap() {
+		return this.map;
+	}
+
+	public void startApp() {
+		instance = this;
+		Display display = Display.getDisplay(this);
+		display.setCurrent(this.map);
+	}
+
+	public void pauseApp() {
+	}
+
+	public void destroyApp(boolean unconditional) {
+		this.map.shutdown();
+		instance.notifyDestroyed();
+	}
+
 }

@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,9 @@
  *  feel free to contact the author.
  */
 
-package corona.osmbugs;
+package wandersmann.osmbugs;
 
-import corona.io.Location;
+import wandersmann.io.Location;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,8 +49,8 @@ public class OpenStreetBugs {
 			+ "&text="+encodeURIComponent(description + " [" + this.getUserName() + "]")
 			+ "&format=js"
 		 */
-		String url = API_URL + "addPOIexec?lat=" + location.getLatitude()
-				+ "&lon=" + location.getLongitude() + "&text=" + urlEncode(text)
+		String url = API_URL + "addPOIexec?lat=" + location.getY()
+				+ "&lon=" + location.getX() + "&text=" + urlEncode(text)
 				+ "&format=js";
 		try {
 			HttpConnection httpConn = (HttpConnection)Connector.open(url);

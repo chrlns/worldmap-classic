@@ -4,7 +4,7 @@
 
 package org.qcontinuum.gpstrack;
 
-import corona.DebugDialog;
+import wandersmann.DebugDialog;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,17 +14,16 @@ import javax.microedition.io.StreamConnection;
 public class Gps extends Thread {
 
 	private float mHeading, mSpeed, mAltitude;
-	//private EarthPosition mEarthPosition;
 	private boolean mFix;
 	private int mHour, mMinute, mSecond;
 	private int mDay, mMonth, mYear;
 	private int mNmeaCount;
 	private int mAllSatellites, mFixSatellites = 3;
 	private GpsHorizontalPosition mGpsSatellites[] = new GpsHorizontalPosition[12];
-	private double lat = Double.NaN;
-	private double lon = Double.NaN;
+	private float lat = Float.NaN;
+	private float lon = Float.NaN;
 	private String bluetoothURL;
-	private boolean running = false;
+	private boolean running = true;
 
 	public Gps(String url) {
 		for (int i = 0; i < 12; i++) {
@@ -42,11 +41,11 @@ public class Gps extends Thread {
 		return mGpsSatellites;
 	}
 
-	public double getLongitude() {
+	public float getLongitude() {
 		return this.lon;
 	}
 
-	public double getLatitude() {
+	public float getLatitude() {
 		return this.lat;
 	}
 
@@ -54,9 +53,9 @@ public class Gps extends Thread {
 		return mHeading;
 	}
 
-	/* public float getSpeed() {
-	return mSpeed != null ? mSpeed.Mul(new Float(1852, -3)) : null;
-	}*/
+	public float getSpeed() {
+		return mSpeed * 1.852f;
+	}
 	public float getAltitude() {
 		return mAltitude;
 	}
@@ -70,18 +69,16 @@ public class Gps extends Thread {
 	}
 
 	public boolean isRunning() {
-		return this.running;
+		return this.running && isAlive();
 	}
 
 	public void run() {
-		this.running = true;
-
 		try {
 			StreamConnection streamConnection = (StreamConnection)Connector.open(this.bluetoothURL);
 			InputStream ins = streamConnection.openInputStream();
 
 			ByteArrayOutputStream buf = new ByteArrayOutputStream();
-			while (running) {
+			while(running) {
 				int ch = 0;
 				try {
 					while ((ch = ins.read()) != '\n') {
@@ -104,10 +101,11 @@ public class Gps extends Thread {
 
 			ins.close();
 			streamConnection.close();
-		} catch (Exception ex) {
+			this.running = false;
+		} catch(Throwable ex) {
+			this.running = false;
 			DebugDialog.getInstance().addMessage("Excp", ex.getMessage());
 		}
-		this.running = false;
 	}
 
 	private void extractData(String[] param, int a, int b, int c, int d, int e) {

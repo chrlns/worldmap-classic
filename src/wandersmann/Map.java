@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,17 @@
  *  feel free to contact the author.
  */
 
-package corona;
+package wandersmann;
 
-import corona.io.Location;
-import corona.io.TileCache;
-import corona.osmbugs.Bug;
-import corona.osmbugs.BugReceiver;
-import corona.osmbugs.OpenStreetBugs;
-import corona.util.Math2;
+import wandersmann.io.Location;
+import wandersmann.io.TileCache;
+import wandersmann.io.TileCacheManager;
+import wandersmann.io.TileLoadingObserver;
+import wandersmann.osmbugs.Bug;
+import wandersmann.osmbugs.BugReceiver;
+import wandersmann.osmbugs.OpenStreetBugs;
+import wandersmann.util.Config;
+import wandersmann.util.Math2;
 import java.io.IOException;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.ServiceRecord;
@@ -45,57 +48,29 @@ import net.benhui.btgallery.bluelet.BLUElet;
  * Main draw canvas (Map).
  * @author Christian Lins
  */
-public class Map extends Canvas implements CommandListener, BugReceiver {
+public class Map extends Canvas 
+		implements CommandListener, BugReceiver, TileLoadingObserver {
 
-	// GPS extents of the map; logical extents are from 0 to 2^zoom
-	public static final float MINY = -85.0511f;
-	public static final float MAXY = 85.0511f;
-	public static final float MINX = -180;
-	public static final float MAXX = 180;
 	public static final int MAXBUGS = 32;
 
-	static float[] radPerPixel(int zoom) {
-		int mapExtent = 1 << zoom;
-		return new float[]
-		{
-			((MAXX + MAXX) / mapExtent) / 256,
-			((MAXY + MAXY) / mapExtent) / 256
-		};
-	}
-
-	static int[] tileNumbers(final double xl, final double yl, final int zoom) {
-		double x = Math2.toOSMMercatorX(xl, zoom);
-		double y = Math2.toOSMMercatorY(yl, zoom);
-		double xdiff = x - Math.floor(x);
-		double ydiff = y - Math.floor(y);
-		return new int[] {
-			(int)Math.floor(x), (int)Math.floor(y),
-			(int)Math.floor(xdiff * 256), (int)Math.floor(ydiff * 256)
-		};
-	}
-
-	static double tile2lon(int x, int zoom) {
-		return x / Math2.pow(2.0, zoom) * 360.0 - 180;
-	}
-
-	static double tile2lat(int y, int zoom) {
-		double n = Math.PI - (2.0 * Math.PI * y) / Math2.pow(2.0, zoom);
-		return Math.toDegrees(Math2.atan(Math2.sinh(n)));
-	}
-
-	private Command	cmdExit	= new Command("Exit", Command.EXIT, 0);
-	private Command cmdBugreport = new Command("Map Error", "Report Map Error", Command.ITEM, 1);
-	private Command cmdShowBugs = new Command("Show Bugs", "Show Map Bugs", Command.ITEM, 1);
-	private Command cmdSwitchMap = new Command("Switch Maps", "StreetMap <-> CycleMap", Command.ITEM, 1);
-	private Command cmdAddBTGPS = new Command("Bluet. GPS", "Attach Bluetooth GPS", Command.ITEM, 0);
-	private Command cmdDebug = new Command("Debug", Command.ITEM, 10);
+	private Command	cmdExit			= new Command("Exit", Command.EXIT, 0);
+	private Command cmdBugreport	= new Command("Map Error", "Report Map Error", Command.ITEM, 1);
+	private Command cmdShowBugs		= new Command("Show Bugs", "Show Map Bugs", Command.ITEM, 1);
+	private Command cmdSwitchCycleMap	= new Command("Cycle Map", "Switch to OpenCycleMap", Command.ITEM, 1);
+	private Command cmdSwitchStreetMap	= new Command("Street Map", "Switch to OpenStreetMap", Command.ITEM, 1);
+	private Command cmdFollow		= new Command("Follow", "Follow position", Command.ITEM, 1);
+	private Command cmdUnfollow		= new Command("Unfollow", "Unfollow position", Command.ITEM, 1);
+	private Command cmdAddBTGPS		= new Command("Blue. GPS", "Attach Bluetooth GPS", Command.ITEM, 0);
+	private Command cmdDebug		= new Command("Debug", Command.ITEM, 10);
+	private boolean follow	= false;
 	private int		zoom	= 12;
 	private int[]	centerTileNumbers;
 	private Location gpsPos = new Location();
-	private Location scrollPos = new Location();
+	private Location scrollPos;
 	private BLUElet bluelet = null;
 	private Bug[]	bugs	= new Bug[MAXBUGS];
 	private int		bugPnt	= 0;
+	private int		mapSource = TileCache.SOURCE_OPENSTREETMAP;
 
 	/**
 	 * constructor
@@ -110,11 +85,19 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 
 			addCommand(cmdBugreport);
 			addCommand(cmdShowBugs);
-			addCommand(cmdSwitchMap);
+			addCommand(cmdSwitchCycleMap);
+			addCommand(cmdFollow);
 			addCommand(cmdAddBTGPS);
 			addCommand(cmdDebug);
 
-			centerTileNumbers = tileNumbers(scrollPos.getX(), scrollPos.getY(), zoom);
+			TileCacheManager.initialize();
+			
+			float x = Config.inst().get(Config.POS_X, gpsPos.getX());
+			float y = Config.inst().get(Config.POS_Y, gpsPos.getY());
+			scrollPos = new Location(x, y);
+			this.zoom = Config.inst().get(Config.ZOOM, zoom);
+
+			centerTileNumbers = Math2.tileNumbers(scrollPos.getX(), scrollPos.getY(), zoom);
 			this.gpsPos.enableUpdateTimer(5);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -122,7 +105,7 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 	}
 
 	private void drawImage(Graphics g, int x, int y, int offX, int offY) throws IOException {
-		Image img = TileCache.getInstance().loadOfflineImage(zoom, x, y);
+		Image img = TileCacheManager.loadImage(zoom, x, y, mapSource, null);
 		if(img != null) {
 			g.drawImage(img, offX, offY, Graphics.TOP | Graphics.LEFT);
 		} else {
@@ -130,14 +113,16 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 			g.setColor(0, 0, 0);
 			g.drawString("Loading...", offX, offY, Graphics.TOP | Graphics.LEFT);
 
-			new MapPainter(this, zoom, x, y).start();
+			TileCacheManager.loadImage(zoom, x, y, mapSource, this);
 		}
 	}
 
 	private void drawGPSDot(Graphics g, int x, int y) {
-		for(int n = 2; n < zoom * 6 / this.gpsPos.getSatellites(); n += 6) {
-			g.setColor(0, 25, 255);
-			g.drawArc(x - (n >> 1), y - (n >> 1), n, n, 0, 360);
+		if(this.gpsPos.hasLocationProvider()) {
+			for(int n = 2; n < zoom * 8 / this.gpsPos.getSatellites(); n += 6) {
+				g.setColor(0, 25, 255);
+				g.drawArc(x - (n >> 1), y - (n >> 1), n, n, 0, 360);
+			}
 		}
 	}
 
@@ -200,7 +185,7 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 			
 			// Draw white bar at the bottom
 			g.setColor(255, 255, 255);
-			g.fillRect(0, getHeight() - 16, getWidth() / 2, getHeight() - 16);
+			g.fillRect(0, getHeight() - 16, getWidth(), getHeight() - 16);
 
 			// Draw cursor and cursor position
 			g.setColor(0, 0, 0);
@@ -210,10 +195,13 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 					+ " " + (Double.toString(scrollPos.getY()) + "0000000").substring(0, 7);
 			g.drawString(scrollPosStr, 1, getHeight() - 15, Graphics.TOP | Graphics.LEFT);
 
+			// Draw GPS-Status
+
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			DebugDialog.getInstance().addMessage("Exception", ex.getMessage());
 			g.setColor(255, 0, 0);
-			g.drawString("Exception: " + ex.getMessage(), 0, 30,
+			g.drawString("An error occurred", 0, 30,
 					Graphics.TOP | Graphics.LEFT);
 		}
 	}
@@ -222,7 +210,7 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 		int[] tileNumbers = centerTileNumbers;
 		int offX = -tileNumbers[2] + getWidth() / 2;	// We want to transform the origin to the center
 		int offY = -tileNumbers[3] + getHeight() / 2;	// of the screen
-		int[] pos = tileNumbers(lon, lat, zoom);
+		int[] pos = Math2.tileNumbers(lon, lat, zoom);
 		int x = (pos[0] - tileNumbers[0]) * 256 + (pos[2] + offX);
 		int y = (pos[1] - tileNumbers[1]) * 256 + (pos[3] + offY);
 		return new int[] {x, y};
@@ -258,6 +246,7 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 				scrollPos.shift(zs, 0);
 				//gpsShf.shift(0, 0.05 / zoom);
 				break;
+			case -5: // ENTER
 			case 53: // '5' to zoom in
 				if(zoom < 18)
 					zoom++;
@@ -268,14 +257,14 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 				break;
 			case 49: // '1' center view on GPS position
 				this.scrollPos =
-						new Location(this.gpsPos.getLatitude(), this.gpsPos.getLongitude());
+						new Location(this.gpsPos.getX(), this.gpsPos.getY());
 				repaint();
 				break;
 			default:
 				System.out.println(keyCode);
 		}
 
-		centerTileNumbers = tileNumbers(scrollPos.getX(), scrollPos.getY(), zoom);
+		centerTileNumbers = Math2.tileNumbers(scrollPos.getX(), scrollPos.getY(), zoom);
 		repaint();
 	}
 
@@ -290,6 +279,7 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 	 */
 	protected void keyRepeated(int keyCode) {
 		if(keyCode < 0) {
+			keyPressed(keyCode);
 			keyPressed(keyCode);
 		}
 	}
@@ -319,31 +309,47 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 		repaint();
 	}
 
+	public void shutdown() {
+		Config.inst().set(Config.POS_X, scrollPos.getX());
+		Config.inst().set(Config.POS_Y, scrollPos.getY());
+		Config.inst().set(Config.ZOOM, zoom);
+		TileCacheManager.shutdown();
+	}
+
 	/**
 	 * Called when action should be handled
 	 */
 	public void commandAction(Command command, Displayable displayable) {
 		if(command.equals(this.cmdExit)) {
-			CoronaMIDlet.getInstance().notifyDestroyed();
+			CoronaMIDlet.getInstance().destroyApp(false);
 		} else if(command.equals(this.cmdBugreport)) {
 			Display.getDisplay(CoronaMIDlet.getInstance())
 					.setCurrent(new ReportMapErrorDialog(this.scrollPos, this));
 		} else if(command.equals(this.cmdShowBugs)) {
-			float[] rpp = radPerPixel(zoom);
+			float[] rpp = Math2.radPerPixel(zoom);
 			float xmin = (float)(scrollPos.getX() - rpp[0] * getWidth() / 2);
 			float xmax = (float)(scrollPos.getX() + rpp[0] * getWidth() / 2);
 			float ymin = (float)(scrollPos.getY() - rpp[1] * getHeight() / 2);
 			float ymax = (float)(scrollPos.getY() + rpp[1] * getHeight() / 2);
 			OpenStreetBugs.getBugs(xmin, xmax, ymin, ymax, this);
-		} else if(command.equals(this.cmdSwitchMap)) {
-			if(TileCache.getInstance().getTileSuffix().equals("")) {
-				TileCache.getInstance().setTileSuffix("ocm");
-				TileCache.getInstance().setTileServer(TileCache.OCM_URL);
-			} else {
-				TileCache.getInstance().setTileSuffix("");
-				TileCache.getInstance().setTileServer(TileCache.OSM_URL);
-			}
+		} else if(command.equals(this.cmdSwitchStreetMap)) {
+			removeCommand(this.cmdSwitchStreetMap);
+			addCommand(this.cmdSwitchCycleMap);
+			mapSource = TileCache.SOURCE_OPENSTREETMAP;
 			repaint();
+		} else if(command.equals(this.cmdSwitchCycleMap)) {
+			removeCommand(this.cmdSwitchCycleMap);
+			addCommand(this.cmdSwitchStreetMap);
+			mapSource = TileCache.SOURCE_OPENCYCLEMAP;
+			repaint();
+		} else if(command.equals(this.cmdFollow)) {
+			removeCommand(cmdFollow);
+			addCommand(cmdUnfollow);
+			follow = true;
+		} else if(command.equals(this.cmdUnfollow)) {
+			removeCommand(cmdUnfollow);
+			addCommand(cmdFollow);
+			follow = false;
 		} else if(command.equals(this.cmdAddBTGPS)) {
 			// Start BLUElet to discover Bluetooth devices
 			bluelet = new BLUElet(CoronaMIDlet.getInstance(), this);
@@ -372,4 +378,22 @@ public class Map extends Canvas implements CommandListener, BugReceiver {
 			DebugDialog.getInstance().show();
 		}
 	}
+
+	public void tileLoaded(Image img, int zoom, int x, int y, int mapSource, byte[] raw) {
+		if(img != null) {
+			repaint();
+		}
+	}
+
+	/**
+	 * Called by a timer in Location class when the location changes.
+	 * Redraws this Map.
+	 */
+	public void locationUpdated() {
+		if(this.follow) {
+			keyPressed(49); // Press '1'
+		}
+		repaint();
+	}
+
 }

@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,10 +19,10 @@
  *  feel free to contact the author.
  */
 
-package corona;
+package wandersmann;
 
-import corona.io.Location;
-import corona.osmbugs.OpenStreetBugs;
+import wandersmann.io.Location;
+import wandersmann.osmbugs.OpenStreetBugs;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;

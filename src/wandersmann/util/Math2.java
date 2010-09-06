@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,13 +19,39 @@
  *  feel free to contact the author.
  */
 
-package corona.util;
+package wandersmann.util;
 
 /**
  * Useful mathematical functions.
  * @author Christian Lins
  */
 public class Math2 {
+
+	// GPS extents of the map; logical extents are from 0 to 2^zoom
+	public static final float MINY = -85.0511f;
+	public static final float MAXY = 85.0511f;
+	public static final float MINX = -180;
+	public static final float MAXX = 180;
+
+	public static float[] radPerPixel(int zoom) {
+		int mapExtent = 1 << zoom;
+		return new float[]
+		{
+			((MAXX + MAXX) / mapExtent) / 256,
+			((MAXY + MAXY) / mapExtent) / 256
+		};
+	}
+
+	public static int[] tileNumbers(final double xl, final double yl, final int zoom) {
+		double x = Math2.toOSMMercatorX(xl, zoom);
+		double y = Math2.toOSMMercatorY(yl, zoom);
+		double xdiff = x - Math.floor(x);
+		double ydiff = y - Math.floor(y);
+		return new int[] {
+			(int)Math.floor(x), (int)Math.floor(y),
+			(int)Math.floor(xdiff * 256), (int)Math.floor(ydiff * 256)
+		};
+	}
 
 	public static double atan(double x) {
 		return x / (1 + 0.28 * (x * x));

@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,45 +19,44 @@
  *  feel free to contact the author.
  */
 
-package corona;
+package wandersmann.io;
 
-import corona.io.TileCache;
+import javax.microedition.lcdui.Image;
 
 /**
- *
+ * Thread that loads a tile asynchronously.
  * @author Christian Lins
  */
-class MapPainter extends Thread {
+public class TileLoadingTask implements Runnable {
 
-	private static int numInstances = 0;
+	public String URL;
 
-	private int zoom, x, y;
-	private Map map;
-	
-	public MapPainter(Map map, int zoom, int x, int y) {
-		this.map = map;
-		this.zoom = zoom;
+	private TileCache cache;
+	private TileLoadingObserver observer;
+	private int x, y, zoom, mapSource;
+
+	public TileLoadingTask(int zoom, int x, int y, int mapSource,
+			TileCache cache, TileLoadingObserver observer) {
+		if(cache == null || observer == null) {
+			throw new IllegalArgumentException();
+		}
+
+		this.URL = mapSource + "/" + zoom + "/" + x + "/" + y;
+		this.cache = cache;
+		this.observer = observer;
 		this.x = x;
 		this.y = y;
+		this.zoom = zoom;
+		this.mapSource = mapSource;
 	}
 
 	public void run() {
-		if(numInstances >= 9) {
-			return;
-		} else {
-			numInstances++;
-		}
-
 		try {
-			// Simply warm the cache
-			TileCache.getInstance().loadImage(zoom, x, y);
-
-			// and repaint the map
-			this.map.repaint();
-			
+			Image img = this.cache.loadImage(zoom, x, y, mapSource, true, null);
+			this.observer.tileLoaded(img, zoom, x, y, mapSource, null);
 		} catch(Throwable ex) {
 			ex.printStackTrace();
 		}
-		numInstances--;
 	}
+
 }

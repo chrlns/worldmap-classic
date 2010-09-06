@@ -1,5 +1,5 @@
 /*
- *  CORONA - J2ME OpenStreetMap Client
+ *  WANDERSMANN - J2ME OpenStreetMap Client
  *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -19,37 +19,36 @@
  *  feel free to contact the author.
  */
 
-package corona.io;
+package wandersmann.io;
 
-import corona.CoronaMIDlet;
-import corona.DebugDialog;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.microedition.location.LocationProvider;
 import javax.microedition.location.QualifiedCoordinates;
 import org.qcontinuum.gpstrack.Gps;
+import wandersmann.CoronaMIDlet;
 
 /**
- *
+ * A position on planet earth.
  * @author Christian Lins
  */
 public class Location {
 
-	private double lat, lon;
+	private float x, y;
 	private Gps gps = null;
 	private Timer timer = null;
 	private int satellites = 3;
 
 	public Location() {
-		this.lat = 52.2640; // y
-		this.lon = 8.03301; // x
+		this.y = 52.2640f; // y
+		this.x = 8.03301f; // x
 
 		updateLocation();
 	}
 
-	public Location(double lat, double lon) {
-		this.lat = lat;
-		this.lon = lon;
+	public Location(float x, float y) {
+		this.x = x;
+		this.y = y;
 	}
 
 	public void attachBTGPS(String url) {
@@ -57,7 +56,6 @@ public class Location {
 			url = "btspp://" + url;
 		}
 		this.gps = new Gps(url);
-		//this.gps.setPriority(Thread.MIN_PRIORITY);
 		this.gps.start();
 	}
 
@@ -68,7 +66,7 @@ public class Location {
 
 			public void run() {
 				if(updateLocation()) {
-					CoronaMIDlet.getInstance().getMap().repaint();
+					CoronaMIDlet.getInstance().getMap().locationUpdated();
 				}
 			}
 		}, secInterval, secInterval);
@@ -78,25 +76,33 @@ public class Location {
 		return this.satellites;
 	}
 
+	private boolean hasLocationAPI() {
+		try {
+			if(LocationProvider.getInstance(null) != null) {
+				return true;
+			}
+		} catch(Throwable t) {
+			t.printStackTrace();
+		}
+		return false;
+	}
+
+	public boolean hasLocationProvider() {
+		return (this.gps != null && this.gps.isRunning()) ||
+				hasLocationAPI();
+	}
+
 	public void shift(double dlon, double dlat) {
-		this.lat += dlat;
-		this.lon += dlon;
+		this.y += dlat;
+		this.x += dlon;
 	}
 
-	public double getX() {
-		return getLongitude();
+	public float getX() {
+		return x;
 	}
 
-	public double getY() {
-		return getLatitude();
-	}
-
-	public double getLatitude() {
-		return this.lat;
-	}
-
-	public double getLongitude() {
-		return this.lon;
+	public float getY() {
+		return y;
 	}
 
 	/**
@@ -106,15 +112,16 @@ public class Location {
 	 */
 	public boolean updateLocation() {
 		boolean updated = false;
+
 		if(this.gps != null) {
-			double newL = this.gps.getLatitude();
-			if(!Double.isNaN(newL)) {
-				this.lat = newL;
+			float newL = this.gps.getLatitude();
+			if(!Float.isNaN(newL)) {
+				this.y = newL;
 				updated = true;
 			}
 			newL = this.gps.getLongitude();
-			if(!Double.isNaN(newL)) {
-				this.lon = newL;
+			if(!Float.isNaN(newL)) {
+				this.x = newL;
 				updated = true;
 			}
 			this.satellites = this.gps.getSatelliteCount();
@@ -124,17 +131,19 @@ public class Location {
 						= LocationProvider.getLastKnownLocation();
 				if (location != null) {
 					QualifiedCoordinates coord = location.getQualifiedCoordinates();
-					this.lat = coord.getLatitude();
-					this.lon = coord.getLongitude();
+					this.y = (float)coord.getLatitude();
+					this.x = (float)coord.getLongitude();
 					updated = true;
 				}
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
 		}
-		if(updated) {
-			DebugDialog.getInstance().addMessage("Note", "GPS: " + this.lon + " " + this.lat);
+
+		if(this.gps != null && !this.gps.isRunning()) {
+			this.gps = null;
 		}
+
 		return updated;
 	}
 
@@ -143,9 +152,9 @@ public class Location {
 		buf.append("Location@");
 		buf.append(hashCode());
 		buf.append(' ');
-		buf.append(this.lon);
+		buf.append(this.x);
 		buf.append(' ');
-		buf.append(this.lat);
+		buf.append(this.y);
 		buf.append('\n');
 		return buf.toString();
 	}
