@@ -1,15 +1,14 @@
 // J2ME GPS Track
 // Copyright (C) 2006 Dana Peters
 // http://www.qcontinuum.org/gpstrack
-
 package org.qcontinuum.gpstrack;
 
-import wandersmann.DebugDialog;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
+import wandersmann.WandersmannMIDlet;
 
 public class Gps extends Thread {
 
@@ -24,12 +23,14 @@ public class Gps extends Thread {
 	private float lon = Float.NaN;
 	private String bluetoothURL;
 	private boolean running = true;
+	private WandersmannMIDlet midlet;
 
-	public Gps(String url) {
+	public Gps(WandersmannMIDlet midlet, String url) {
 		for (int i = 0; i < 12; i++) {
 			mGpsSatellites[i] = new GpsHorizontalPosition();
 		}
 		mNmeaCount = 0;
+		this.midlet = midlet;
 		this.bluetoothURL = url;
 	}
 
@@ -56,6 +57,7 @@ public class Gps extends Thread {
 	public float getSpeed() {
 		return mSpeed * 1.852f;
 	}
+
 	public float getAltitude() {
 		return mAltitude;
 	}
@@ -74,11 +76,12 @@ public class Gps extends Thread {
 
 	public void run() {
 		try {
-			StreamConnection streamConnection = (StreamConnection)Connector.open(this.bluetoothURL);
+			// TODO: Connection may fail if already open
+			StreamConnection streamConnection = (StreamConnection) Connector.open(this.bluetoothURL);
 			InputStream ins = streamConnection.openInputStream();
 
 			ByteArrayOutputStream buf = new ByteArrayOutputStream();
-			while(running) {
+			while (running) {
 				int ch = 0;
 				try {
 					while ((ch = ins.read()) != '\n') {
@@ -87,24 +90,24 @@ public class Gps extends Thread {
 					buf.flush();
 					byte[] b = buf.toByteArray();
 					String line = new String(b);
-					//DebugDialog.getInstance().addMessage("Note", line);
+// TODO: Printout line to debug
 					try {
 						receiveNmea(line);
 					} catch (Exception ex) {
-						ex.printStackTrace();
+						midlet.getDebugDialog().addMessage("Excp", ex.getMessage());
 					}
 					buf.reset();
 				} catch (IOException ex) {
-					DebugDialog.getInstance().addMessage("Excp", ex.getMessage());
+					midlet.getDebugDialog().addMessage("IOExcp", ex.getMessage());
 				}
 			}
 
 			ins.close();
 			streamConnection.close();
 			this.running = false;
-		} catch(Throwable ex) {
+		} catch (Throwable ex) {
 			this.running = false;
-			DebugDialog.getInstance().addMessage("Excp", ex.getMessage());
+			midlet.getDebugDialog().addMessage("Excp", ex.getMessage());
 		}
 	}
 

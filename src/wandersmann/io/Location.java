@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ import java.util.TimerTask;
 import javax.microedition.location.LocationProvider;
 import javax.microedition.location.QualifiedCoordinates;
 import org.qcontinuum.gpstrack.Gps;
-import wandersmann.CoronaMIDlet;
+import wandersmann.WandersmannMIDlet;
 
 /**
  * A position on planet earth.
@@ -38,11 +38,12 @@ public class Location {
 	private Gps gps = null;
 	private Timer timer = null;
 	private int satellites = 3;
+	private WandersmannMIDlet midlet;
 
-	public Location() {
-		this.y = 52.2640f; // y
-		this.x = 8.03301f; // x
-
+	public Location(WandersmannMIDlet midlet) {
+		this.y = 52.0f; // y
+		this.x = 8.0f; // x
+		this.midlet = midlet;
 		updateLocation();
 	}
 
@@ -55,7 +56,7 @@ public class Location {
 		if (!url.startsWith("btspp://")) {
 			url = "btspp://" + url;
 		}
-		this.gps = new Gps(url);
+		this.gps = new Gps(midlet, url);
 		this.gps.start();
 	}
 
@@ -66,7 +67,7 @@ public class Location {
 
 			public void run() {
 				if(updateLocation()) {
-					CoronaMIDlet.getInstance().getMap().locationUpdated();
+					midlet.getMap().locationUpdated();
 				}
 			}
 		}, secInterval, secInterval);

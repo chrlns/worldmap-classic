@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,14 +42,16 @@ public class ReportMapErrorDialog extends Form implements CommandListener {
 	private Map	map;
 	private TextField txtUsername = new TextField("User name:", "NoName", 64, TextField.ANY);
 	private TextField txtProblem = new TextField("Describe the Problem:", "", 255, TextField.ANY);
+	private WandersmannMIDlet midlet;
 
-	public ReportMapErrorDialog(Location location, Map map) {
+	public ReportMapErrorDialog(WandersmannMIDlet midlet, Location location, Map map) {
 		super("Report Map Error");
 		setCommandListener(this);
 		
 		addCommand(cmdCancel);
 		addCommand(cmdSubmitBug);
 
+		this.midlet = midlet;
 		this.location = location;
 		this.map = map;
 		this.append("Position: " + location.getX() + " " + location.getY());
@@ -60,10 +62,10 @@ public class ReportMapErrorDialog extends Form implements CommandListener {
 
 	public void commandAction(Command cmd, Displayable displayable) {
 		if(cmd.equals(this.cmdCancel)) {
-			Display.getDisplay(CoronaMIDlet.getInstance()).setCurrent(this.map);
+			Display.getDisplay(midlet).setCurrent(this.map);
 		} else if(cmd.equals(this.cmdSubmitBug)) {
 			OpenStreetBugs.submitBug(location, txtProblem.getString(), txtUsername.getString());
-			Display.getDisplay(CoronaMIDlet.getInstance()).setCurrent(this.map);
+			Display.getDisplay(midlet).setCurrent(this.map);
 		}
 	}
 

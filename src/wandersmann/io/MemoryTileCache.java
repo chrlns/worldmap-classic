@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +48,11 @@ class MemoryTileCache implements TileCache {
 		}
 	}
 
+	void freeCache() {
+		tiles.clear();
+		keys = new Vector(cacheSize);
+	}
+
 	private void trimCache() {
 		while (tiles.size() >= cacheSize) {
 			tiles.remove(keys.firstElement());
@@ -91,14 +96,6 @@ class MemoryTileCache implements TileCache {
 		} else {
 			return null;
 		}
-	}
-
-	/**
-	 * Frees all stored images.
-	 */
-	public void lowMemAction() {
-		this.cacheSize >>= 1;
-		trimCache();
 	}
 
 	public void shutdown() {

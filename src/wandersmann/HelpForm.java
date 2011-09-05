@@ -18,7 +18,6 @@
  *  If you need a commercial license for this little piece of software,
  *  feel free to contact the author.
  */
-
 package wandersmann;
 
 import javax.microedition.lcdui.Command;
@@ -26,39 +25,39 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.Spacer;
 
 /**
- *
+ * Help form.
  * @author Christian Lins
  */
-public class DebugDialog extends Form implements CommandListener {
+public class HelpForm extends Form implements CommandListener {
 
-	private Command cmdBack = new Command("Back", Command.BACK, 0);
+	public static final Command BACK = new Command("Zurück", Command.BACK, 0);
 	private WandersmannMIDlet midlet;
 
-	public DebugDialog(WandersmannMIDlet midlet) {
-		super("Debug");
-		this.midlet = midlet;
+	public HelpForm(WandersmannMIDlet midlet) {
+		super("Help");
 		setCommandListener(this);
-		addCommand(cmdBack);
+
+		this.midlet = midlet;
+
+		addCommand(BACK);
+
+		append("Press '5' to zoom in.");
+		append(new Spacer(getWidth(), 1));
+		append("Press '0' to zoom out.");
+		append(new Spacer(getWidth(), 1));
+		append("Press '4' and '6' to move map west and east.");
+		append(new Spacer(getWidth(), 1));
+		append("Press '2' and '8' to move map north and south.");
+		append(new Spacer(getWidth(), 1));
+		append("Press '1' to center the map to your current location if available.");
 	}
 
-	public void addMessage(String label, String msg) {
-		this.insert(0, new StringItem(label + ": ", msg));
-		while(this.size() > 50) {
-			delete(50);
-		}
-	}
-
-	public void commandAction(Command command, Displayable displayable) {
-		if(command.equals(this.cmdBack)) {
+	public void commandAction(Command cmd, Displayable disp) {
+		if (cmd.equals(BACK)) {
 			Display.getDisplay(midlet).setCurrent(midlet.getMap());
 		}
 	}
-
-	public void show() {
-		Display.getDisplay(midlet).setCurrent(this);
-	}
-
 }

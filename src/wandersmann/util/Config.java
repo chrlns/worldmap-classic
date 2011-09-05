@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import org.qcontinuum.gpstrack.StringTokenizer;
+import wandersmann.WandersmannMIDlet;
 
 /**
  * Central app config. Stores data in "config" RecordStore.
@@ -36,19 +37,16 @@ import org.qcontinuum.gpstrack.StringTokenizer;
  */
 public class Config {
 
-	public static final String POS_X = "PosX";
-	public static final String POS_Y = "PosY";
-	public static final String ZOOM	 = "Zoom";
-
-	private static Config instance = new Config();
-	
-	public static Config inst() {
-		return Config.instance;
-	}
+	public static final String POS_X       = "PosX";
+	public static final String POS_Y       = "PosY";
+	public static final String LASTMAPTYPE = "LastMapType";
+	public static final String ZOOM	       = "Zoom";
 
 	private Hashtable keys = new Hashtable();
-	
-	private Config() {
+	private WandersmannMIDlet midlet;
+
+	public Config(WandersmannMIDlet midlet) {
+		this.midlet = midlet;
 		try {
 			RecordStore config = RecordStore.openRecordStore("config", true);
 			
@@ -62,7 +60,7 @@ public class Config {
 			configKeys.destroy();
 			config.closeRecordStore();
 		} catch(RecordStoreException ex) {
-			DebugDialog.getInstance().addMessage("Exception", ex.getMessage());
+			midlet.getDebugDialog().addMessage("Exception", ex.getMessage());
 		}
 	}
 

@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 package wandersmann.io;
 
 import javax.microedition.lcdui.Image;
+import wandersmann.WandersmannMIDlet;
 
 /**
  * Controls the caching. This class has only static methods for performance
@@ -30,24 +31,26 @@ import javax.microedition.lcdui.Image;
  */
 public final class TileCacheManager {
 
-	private TileCacheManager() {
-		// Is never called
+	private static MemoryTileCache memoryTileCache;
+	private static TileLoader loader;
+
+	public static void clearVolatileCache() {
+		memoryTileCache.freeCache();
 	}
 
-	private static final TileCache memoryTileCache = new MemoryTileCache(
-			new RMSTileCache(
-					new OnlineFileSource()));
-
-	public static void initialize() {
+	public static void initialize(WandersmannMIDlet midlet) {
+		memoryTileCache = new MemoryTileCache(
+			new RMSTileCache(midlet, new OnlineFileSource(midlet)));
 		TileCacheManager.memoryTileCache.initialize();
-		TileLoader.Instance.start();
+		loader = new TileLoader();
+		loader.start();
 	}
 
 	public static Image loadImage(int zoom, int x, int y, int mapSource, TileLoadingObserver obs) {
 		Image img = memoryTileCache.loadImage(zoom, x, y, mapSource, false, null);
 		if(img == null && obs != null) {
 			TileLoadingTask task = new TileLoadingTask(zoom, x, y, mapSource, memoryTileCache, obs);
-			TileLoader.Instance.addTask(task);
+			loader.addTask(task);
 			return null;
 		} else {
 			return img;
@@ -55,7 +58,17 @@ public final class TileCacheManager {
 	}
 
 	public static void shutdown() {
-		memoryTileCache.shutdown();
+		try {
+			loader.interrupt();
+			loader = null;
+			memoryTileCache.shutdown();
+		} catch(Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	private TileCacheManager() {
+		// Is never called
 	}
 
 }

@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,21 +29,17 @@ import java.util.Hashtable;
  * @author Christian Lins
  */
 public class TileLoader extends Thread {
-
-	public static final TileLoader Instance = new TileLoader();
 	
 	private final Hashtable tasks = new Hashtable();
 
-	private TileLoader() {
+	public TileLoader() {
 		super("TileLoader");
 	}
 
 	public void addTask(TileLoadingTask task) {
 		synchronized(this.tasks) {
-			if(!tasks.containsKey(task.URL)) {
-				tasks.put(task.URL, task);
-				tasks.notify();
-			}
+			tasks.put(task.URL, task);
+			tasks.notify();
 		}
 	}
 
@@ -56,6 +52,10 @@ public class TileLoader extends Thread {
 					Enumeration keys = tasks.keys();
 					if(keys.hasMoreElements()) {
 						task = (TileLoadingTask)this.tasks.remove(keys.nextElement());
+						if(System.currentTimeMillis() - task.creationTime() > 30000) {
+							// Skip this task as it is probably too old (> 30 seconds)
+							continue;
+						}
 					}
 				}
 

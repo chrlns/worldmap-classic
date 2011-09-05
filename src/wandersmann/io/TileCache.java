@@ -48,10 +48,5 @@ public interface TileCache {
 	 */
 	Image loadImage(int zoom, int x, int y, int mapSource, boolean goDown, Vector observer);
 
-	/**
-	 * Causes the cache to free unused elements.
-	 */
-	void lowMemAction();
-
 	void shutdown();
 }

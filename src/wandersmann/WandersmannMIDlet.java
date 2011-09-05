@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,38 +23,55 @@ package wandersmann;
 
 import javax.microedition.lcdui.Display;
 import javax.microedition.midlet.MIDlet;
+import wandersmann.io.TileCacheManager;
+import wandersmann.util.Config;
 
 /**
- * The main midlet of the application. For historic reasons the name is still
- * CoronaMIDlet.
+ * The main midlet of the application.
  * @author Christian Lins
  */
-public class CoronaMIDlet extends MIDlet {
+public class WandersmannMIDlet extends MIDlet {
 
-	private static CoronaMIDlet instance;
+	private Config config;
+	private DebugDialog debugDialog;
+	private Map map;
 
-	public static CoronaMIDlet getInstance() {
-		return instance;
+	public WandersmannMIDlet() {
+		this.config = new Config(this);
+		this.debugDialog = new DebugDialog(this);
+		this.map = new Map(this);
+
+		TileCacheManager.initialize(this);
 	}
 
-	private Map map = new Map();
+	public Config getConfig() {
+		return this.config;
+	}
+
+	public DebugDialog getDebugDialog() {
+		return this.debugDialog;
+	}
 
 	public Map getMap() {
 		return this.map;
 	}
 
 	public void startApp() {
-		instance = this;
 		Display display = Display.getDisplay(this);
 		display.setCurrent(this.map);
 	}
 
+	/**
+	 * This method is called by the runtime when the MIDlet is paused.
+	 * The MIDlet should free as many resources as possible and return from this
+	 * method as soon as possible.
+	 */
 	public void pauseApp() {
+		TileCacheManager.clearVolatileCache();
 	}
 
 	public void destroyApp(boolean unconditional) {
 		this.map.shutdown();
-		instance.notifyDestroyed();
 	}
 
 }

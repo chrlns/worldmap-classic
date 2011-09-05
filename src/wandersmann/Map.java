@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,29 +53,34 @@ public class Map extends Canvas
 
 	public static final int MAXBUGS = 32;
 
-	private Command	cmdExit			= new Command("Exit", Command.EXIT, 0);
+	private Command cmdHelp			= new Command("Help", Command.ITEM, 0);
+	private Command	cmdExit			= new Command("Exit", Command.EXIT, 1);
 	private Command cmdBugreport	= new Command("Map Error", "Report Map Error", Command.ITEM, 1);
 	private Command cmdShowBugs		= new Command("Show Bugs", "Show Map Bugs", Command.ITEM, 1);
 	private Command cmdSwitchCycleMap	= new Command("Cycle Map", "Switch to OpenCycleMap", Command.ITEM, 1);
 	private Command cmdSwitchStreetMap	= new Command("Street Map", "Switch to OpenStreetMap", Command.ITEM, 1);
 	private Command cmdFollow		= new Command("Follow", "Follow position", Command.ITEM, 1);
 	private Command cmdUnfollow		= new Command("Unfollow", "Unfollow position", Command.ITEM, 1);
-	private Command cmdAddBTGPS		= new Command("Blue. GPS", "Attach Bluetooth GPS", Command.ITEM, 0);
+	private Command cmdAddBTGPS		= new Command("Blue. GPS", "Attach Bluetooth GPS", Command.ITEM, 1);
 	private Command cmdDebug		= new Command("Debug", Command.ITEM, 10);
+	private Command cmdAbout		= new Command("About", Command.HELP, 1);
 	private boolean follow	= false;
-	private int		zoom	= 12;
+	private int		zoom	= 1;
 	private int[]	centerTileNumbers;
-	private Location gpsPos = new Location();
+	private Location gpsPos;
 	private Location scrollPos;
 	private BLUElet bluelet = null;
 	private Bug[]	bugs	= new Bug[MAXBUGS];
 	private int		bugPnt	= 0;
 	private int		mapSource = TileCache.SOURCE_OPENSTREETMAP;
+	private WandersmannMIDlet midlet;
 
 	/**
-	 * constructor
+	 * Map constructor.
 	 */
-	public Map() {
+	public Map(WandersmannMIDlet midlet) {
+		this.midlet = midlet;
+		this.gpsPos = new Location(midlet);
 		try {
 			// Set up this canvas to listen to command events
 			setCommandListener(this);
@@ -83,19 +88,25 @@ public class Map extends Canvas
 			// Add the Exit command
 			addCommand(cmdExit);
 
-			addCommand(cmdBugreport);
-			addCommand(cmdShowBugs);
-			addCommand(cmdSwitchCycleMap);
-			addCommand(cmdFollow);
-			addCommand(cmdAddBTGPS);
+			//addCommand(cmdBugreport);
+			//addCommand(cmdShowBugs);
+			//addCommand(cmdSwitchCycleMap);
+			//addCommand(cmdFollow);
+			//addCommand(cmdAddBTGPS);
 			addCommand(cmdDebug);
-
-			TileCacheManager.initialize();
+			addCommand(cmdAbout);
+			addCommand(cmdHelp);
 			
-			float x = Config.inst().get(Config.POS_X, gpsPos.getX());
-			float y = Config.inst().get(Config.POS_Y, gpsPos.getY());
+			float x = midlet.getConfig().get(Config.POS_X, gpsPos.getX());
+			float y = midlet.getConfig().get(Config.POS_Y, gpsPos.getY());
 			scrollPos = new Location(x, y);
-			this.zoom = Config.inst().get(Config.ZOOM, zoom);
+			this.zoom = midlet.getConfig().get(Config.ZOOM, zoom);
+			String lastMapType = midlet.getConfig().get(Config.LASTMAPTYPE, "osm");
+			if(lastMapType.equals("ocm")) { // OpenCycleMap
+				removeCommand(this.cmdSwitchCycleMap);
+				addCommand(this.cmdSwitchStreetMap);
+				mapSource = TileCache.SOURCE_OPENCYCLEMAP;
+			}
 
 			centerTileNumbers = Math2.tileNumbers(scrollPos.getX(), scrollPos.getY(), zoom);
 			this.gpsPos.enableUpdateTimer(5);
@@ -185,7 +196,7 @@ public class Map extends Canvas
 			
 			// Draw white bar at the bottom
 			g.setColor(255, 255, 255);
-			g.fillRect(0, getHeight() - 16, getWidth(), getHeight() - 16);
+			g.fillRect(0, getHeight() - 16, getWidth() / 2, getHeight() - 16);
 
 			// Draw cursor and cursor position
 			g.setColor(0, 0, 0);
@@ -193,13 +204,13 @@ public class Map extends Canvas
 			g.fillArc(getWidth() / 2 - 2, getHeight() / 2 - 2, 4, 4, 0, 360);
 			String scrollPosStr = (Double.toString(scrollPos.getX()) + "0000000").substring(0, 7)
 					+ " " + (Double.toString(scrollPos.getY()) + "0000000").substring(0, 7);
-			g.drawString(scrollPosStr, 1, getHeight() - 15, Graphics.TOP | Graphics.LEFT);
+			g.drawString(scrollPosStr, 1, getHeight() - 1, Graphics.BOTTOM | Graphics.LEFT);
 
 			// Draw GPS-Status
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			DebugDialog.getInstance().addMessage("Exception", ex.getMessage());
+			midlet.getDebugDialog().addMessage("Exception", ex.getMessage());
 			g.setColor(255, 0, 0);
 			g.drawString("An error occurred", 0, 30,
 					Graphics.TOP | Graphics.LEFT);
@@ -223,24 +234,28 @@ public class Map extends Canvas
 		float zs = 10.0f / (1 << zoom);
 		switch(keyCode) {
 			case -1: // Up
+			case 50:
 				//offY += 10;
 				scrollPos.shift(0, zs);
 				//gpsShf.shift(0.05 / zoom, 0);
 				//lat += 0.05 / zoom;
 				break;
 			case -2: // Down
+			case 56:
 				//offY -= 10;
 				scrollPos.shift(0, -zs);
 				//gpsShf.shift(-0.05 / zoom, 0);
 				//lat -= 0.05 / zoom;
 				break;
 			case -3: // Left
+			case 52:
 				//offX += 10;
 				//lon -= 0.05 / zoom;
 				scrollPos.shift(-zs, 0);
 				//gpsShf.shift(0, -0.05 / zoom);
 				break;
 			case -4: // Right
+			case 54:
 				//offX -= 10;
 				//lon += 0.05 / zoom;
 				scrollPos.shift(zs, 0);
@@ -256,8 +271,8 @@ public class Map extends Canvas
 					zoom--;
 				break;
 			case 49: // '1' center view on GPS position
-				this.scrollPos =
-						new Location(this.gpsPos.getX(), this.gpsPos.getY());
+				//this.scrollPos =
+				//		new Location(this.gpsPos.getX(), this.gpsPos.getY());
 				repaint();
 				break;
 			default:
@@ -310,9 +325,9 @@ public class Map extends Canvas
 	}
 
 	public void shutdown() {
-		Config.inst().set(Config.POS_X, scrollPos.getX());
-		Config.inst().set(Config.POS_Y, scrollPos.getY());
-		Config.inst().set(Config.ZOOM, zoom);
+		midlet.getConfig().set(Config.POS_X, scrollPos.getX());
+		midlet.getConfig().set(Config.POS_Y, scrollPos.getY());
+		midlet.getConfig().set(Config.ZOOM, zoom);
 		TileCacheManager.shutdown();
 	}
 
@@ -321,10 +336,11 @@ public class Map extends Canvas
 	 */
 	public void commandAction(Command command, Displayable displayable) {
 		if(command.equals(this.cmdExit)) {
-			CoronaMIDlet.getInstance().destroyApp(false);
+			midlet.destroyApp(false);
+			midlet.notifyDestroyed();
 		} else if(command.equals(this.cmdBugreport)) {
-			Display.getDisplay(CoronaMIDlet.getInstance())
-					.setCurrent(new ReportMapErrorDialog(this.scrollPos, this));
+			Display.getDisplay(midlet).setCurrent(
+					new ReportMapErrorDialog(midlet, this.scrollPos, this));
 		} else if(command.equals(this.cmdShowBugs)) {
 			float[] rpp = Math2.radPerPixel(zoom);
 			float xmin = (float)(scrollPos.getX() - rpp[0] * getWidth() / 2);
@@ -337,11 +353,13 @@ public class Map extends Canvas
 			addCommand(this.cmdSwitchCycleMap);
 			mapSource = TileCache.SOURCE_OPENSTREETMAP;
 			repaint();
+			midlet.getConfig().set(Config.LASTMAPTYPE, "osm");
 		} else if(command.equals(this.cmdSwitchCycleMap)) {
 			removeCommand(this.cmdSwitchCycleMap);
 			addCommand(this.cmdSwitchStreetMap);
 			mapSource = TileCache.SOURCE_OPENCYCLEMAP;
 			repaint();
+			midlet.getConfig().set(Config.LASTMAPTYPE, "ocm");
 		} else if(command.equals(this.cmdFollow)) {
 			removeCommand(cmdFollow);
 			addCommand(cmdUnfollow);
@@ -352,14 +370,13 @@ public class Map extends Canvas
 			follow = false;
 		} else if(command.equals(this.cmdAddBTGPS)) {
 			// Start BLUElet to discover Bluetooth devices
-			bluelet = new BLUElet(CoronaMIDlet.getInstance(), this);
+			bluelet = new BLUElet(midlet, this);
 			bluelet.startApp();
 			bluelet.startInquiry(DiscoveryAgent.GIAC, new UUID[]{new UUID(0x1101)});
-			Display.getDisplay(CoronaMIDlet.getInstance()).setCurrent(bluelet.getUI());
+			Display.getDisplay(midlet).setCurrent(bluelet.getUI());
 		} else if(command.equals(BLUElet.BACK)) {
 			bluelet.destroyApp(false);
-			Display.getDisplay(CoronaMIDlet.getInstance())
-					.setCurrent(CoronaMIDlet.getInstance().getMap());
+			Display.getDisplay(midlet).setCurrent(midlet.getMap());
 		} else if (command.equals(BLUElet.COMPLETED)) {
 			//RemoteDevice btDev = bluelet.getSelectedDevice();
 			ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
@@ -368,14 +385,18 @@ public class Map extends Canvas
 						ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
 				this.gpsPos.attachBTGPS(url);
 			} else {
-				DebugDialog.getInstance().addMessage("Note", "No BT ServiceRecord found!");
+				midlet.getDebugDialog()
+						.addMessage("Note", "No BT ServiceRecord found!");
 			}
-			Display.getDisplay(CoronaMIDlet.getInstance())
-					.setCurrent(CoronaMIDlet.getInstance().getMap());
+			Display.getDisplay(midlet).setCurrent(midlet.getMap());
 		} else if (command.equals(BLUElet.SELECTED)) {
 
 		} else if(command.equals(this.cmdDebug)) {
-			DebugDialog.getInstance().show();
+			midlet.getDebugDialog().show();
+		} else if(command.equals(this.cmdAbout)) {
+			Display.getDisplay(midlet).setCurrent(new AboutForm(midlet));
+		} else if(command.equals(cmdHelp)) {
+			Display.getDisplay(midlet).setCurrent(new HelpForm(midlet));
 		}
 	}
 

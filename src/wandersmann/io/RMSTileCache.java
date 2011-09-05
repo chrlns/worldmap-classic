@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 
 package wandersmann.io;
 
-import wandersmann.DebugDialog;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.microedition.lcdui.Image;
@@ -30,6 +29,7 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreFullException;
 import org.qcontinuum.gpstrack.StringTokenizer;
+import wandersmann.WandersmannMIDlet;
 
 /**
  * Cache that resides in the application's Record Store.
@@ -38,12 +38,14 @@ import org.qcontinuum.gpstrack.StringTokenizer;
 class RMSTileCache implements TileCache, TileLoadingObserver {
 
 	private TileCache	successor;
-	private Hashtable	keys = new Hashtable();
+	private final Hashtable	keys = new Hashtable();
 	private boolean		isEnabled = true;
 	private RecordStore rsIndex;
 	private RecordStore rsImages;
+	private WandersmannMIDlet midlet;
 
-	public RMSTileCache(TileCache successor) {
+	public RMSTileCache(WandersmannMIDlet midlet, TileCache successor) {
+		this.midlet = midlet;
 		this.successor = successor;
 	}
 
@@ -76,31 +78,33 @@ class RMSTileCache implements TileCache, TileLoadingObserver {
 
 	public Image loadImage(int zoom, int x, int y, int mapSource, boolean goDown, Vector obs) {
 		String key = mapSource + "/" + zoom + "/" + x + "/" + y;
-		if(this.isEnabled && this.keys.containsKey(key)) {
-			int id = Integer.parseInt((String)this.keys.get(key));
-			try {
-				byte[] buf = rsImages.getRecord(id);
-				Image img = Image.createImage(buf, 0, buf.length);
-				return img;
-			} catch(RecordStoreException ex) {
-				ex.printStackTrace();
+		synchronized(this.keys) {
+			if(this.isEnabled && this.keys.containsKey(key)) {
+				int id = Integer.parseInt((String)this.keys.get(key));
+				try {
+					byte[] buf = rsImages.getRecord(id);
+					Image img = Image.createImage(buf, 0, buf.length);
+					return img;
+				} catch(RecordStoreException ex) {
+					ex.printStackTrace();
+					return this.successor.loadImage(zoom, x, y, mapSource, goDown, obs);
+				}
+			} else if(goDown) {
+				if(obs == null) {
+					obs = new Vector();
+				}
+				obs.addElement(this);
 				return this.successor.loadImage(zoom, x, y, mapSource, goDown, obs);
+			} else {
+				return null;
 			}
-		} else if(goDown) {
-			if(obs == null) {
-				obs = new Vector();
-			}
-			obs.addElement(this);
-			return this.successor.loadImage(zoom, x, y, mapSource, goDown, obs);
-		} else {
-			return null;
 		}
 	}
 
 	/**
 	 * Completely frees the cache contents.
 	 */
-	public void lowMemAction() {
+	private void lowMemAction() {
 		try {
 			this.rsImages.closeRecordStore();
 			this.rsIndex.closeRecordStore();
@@ -108,13 +112,12 @@ class RMSTileCache implements TileCache, TileLoadingObserver {
 			RecordStore.deleteRecordStore("index");
 			initialize(); // Reinitialize
 		} catch(RecordStoreException ex) {
-			DebugDialog.getInstance().addMessage("Excp", ex.getMessage());
+			midlet.getDebugDialog().addMessage("Excp", ex.getMessage());
 			ex.printStackTrace();
 		}
 	}
 
 	public void tileLoaded(Image img, int zoom, int x, int y, int mapSource, byte[] raw) {
-
 		try {
 			int id = rsImages.addRecord(raw, 0, raw.length);
 

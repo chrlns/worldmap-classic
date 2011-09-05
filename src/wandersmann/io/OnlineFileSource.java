@@ -1,6 +1,6 @@
 /*
  *  WANDERSMANN - J2ME OpenStreetMap Client
- *  Copyright (C) 2010 Christian Lins <christian.lins@fh-osnabrueck.de>
+ *  see AUTHORS for a list of contributors.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 import javax.microedition.lcdui.Image;
 import wandersmann.DebugDialog;
+import wandersmann.WandersmannMIDlet;
 
 /**
  * Load tiles from a tile source.
@@ -37,10 +38,13 @@ import wandersmann.DebugDialog;
  */
 class OnlineFileSource implements TileCache {
 
-	public static final String	OSM_URL		= "http://tile.openstreetmap.org/";
-	public static final String	OCM_URL		= "http://tile.opencyclemap.org/cycle/";
+	public static final String	OSM_URL	= "http://tile.openstreetmap.org/";
+	public static final String	OCM_URL	= "http://tile.opencyclemap.org/cycle/";
 
-	public OnlineFileSource() {
+	private WandersmannMIDlet midlet;
+
+	public OnlineFileSource(WandersmannMIDlet midlet) {
+		this.midlet = midlet;
 	}
 
 	public boolean initialize() {
@@ -76,7 +80,7 @@ class OnlineFileSource implements TileCache {
 			url = OSM_URL;
 		}
 		url += zoom + "/" + x + "/" + y + ".png";
-		DebugDialog.getInstance().addMessage("Note", "Loading " + url);
+		midlet.getDebugDialog().addMessage("Note", "Loading " + url);
 
 		HttpConnection conn = null;
 		DataInputStream ins = null;
@@ -84,7 +88,7 @@ class OnlineFileSource implements TileCache {
 			conn = (HttpConnection)Connector.open(url);
 			conn.setRequestMethod(HttpConnection.GET);
 			if (conn.getResponseCode() != HttpConnection.HTTP_OK) {
-				System.out.println(conn.getResponseCode());
+				System.out.println(url + " returned " + conn.getResponseCode());
 				return null;
 			}
 
@@ -113,7 +117,7 @@ class OnlineFileSource implements TileCache {
 
 			return img;
 		} catch(Exception ex) {
-			DebugDialog.getInstance().addMessage("Excp", ex.getMessage());
+			midlet.getDebugDialog().addMessage("Excp", ex.getMessage());
 			ex.printStackTrace();
 		} finally {
 			try {
@@ -134,9 +138,6 @@ class OnlineFileSource implements TileCache {
 			}
 		}
 		return null;
-	}
-
-	public void lowMemAction() {
 	}
 
 	public void shutdown() {

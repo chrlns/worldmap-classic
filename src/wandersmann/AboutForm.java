@@ -18,7 +18,6 @@
  *  If you need a commercial license for this little piece of software,
  *  feel free to contact the author.
  */
-
 package wandersmann;
 
 import javax.microedition.lcdui.Command;
@@ -26,39 +25,41 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.Spacer;
 import javax.microedition.lcdui.StringItem;
 
 /**
  *
  * @author Christian Lins
  */
-public class DebugDialog extends Form implements CommandListener {
+public class AboutForm extends Form implements CommandListener {
 
-	private Command cmdBack = new Command("Back", Command.BACK, 0);
+	public static final Command BACK = new Command("Back", null, Command.BACK, 0);
 	private WandersmannMIDlet midlet;
 
-	public DebugDialog(WandersmannMIDlet midlet) {
-		super("Debug");
+	public AboutForm(WandersmannMIDlet midlet) {
+		super("Über diese Anwendung");
+
 		this.midlet = midlet;
+
+		append(new StringItem("Name", midlet.getAppProperty("MIDlet-Name")));
+		append(new StringItem("Version", midlet.getAppProperty("MIDlet-Version")));
+		append(new StringItem("Author", midlet.getAppProperty("MIDlet-Vendor")));
+		append(new Spacer(getWidth(), 5));
+		append("Geodata © OpenStreetMap and contributors, CC-BY-SA");
+		append(new Spacer(getWidth(), 5));
+		append("This program is free software: you can redistribute it and/or modify" +
+				" it under the terms of the GNU General Public License as published by " +
+				"the Free Software Foundation, either version 3 of the License, or " +
+				"(at your option) any later version.");
+
+		addCommand(BACK);
 		setCommandListener(this);
-		addCommand(cmdBack);
 	}
 
-	public void addMessage(String label, String msg) {
-		this.insert(0, new StringItem(label + ": ", msg));
-		while(this.size() > 50) {
-			delete(50);
-		}
-	}
-
-	public void commandAction(Command command, Displayable displayable) {
-		if(command.equals(this.cmdBack)) {
+	public void commandAction(Command cmd, Displayable disp) {
+		if (cmd.equals(BACK)) {
 			Display.getDisplay(midlet).setCurrent(midlet.getMap());
 		}
 	}
-
-	public void show() {
-		Display.getDisplay(midlet).setCurrent(this);
-	}
-
 }

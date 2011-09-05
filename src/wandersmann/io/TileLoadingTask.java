@@ -34,6 +34,7 @@ public class TileLoadingTask implements Runnable {
 	private TileCache cache;
 	private TileLoadingObserver observer;
 	private int x, y, zoom, mapSource;
+	private long creationTime = System.currentTimeMillis();
 
 	public TileLoadingTask(int zoom, int x, int y, int mapSource,
 			TileCache cache, TileLoadingObserver observer) {
@@ -48,6 +49,10 @@ public class TileLoadingTask implements Runnable {
 		this.y = y;
 		this.zoom = zoom;
 		this.mapSource = mapSource;
+	}
+
+	public long creationTime() {
+		return this.creationTime;
 	}
 
 	public void run() {
