@@ -29,37 +29,37 @@ import javax.microedition.lcdui.Spacer;
 import javax.microedition.lcdui.StringItem;
 
 /**
- *
+ * 
  * @author Christian Lins
  */
 public class AboutForm extends Form implements CommandListener {
 
-	public static final Command BACK = new Command("Back", null, Command.BACK, 0);
-	private WandersmannMIDlet midlet;
+    public static final Command     BACK = new Command("Back", null, Command.BACK, 0);
+    private final WandersmannMIDlet midlet;
 
-	public AboutForm(WandersmannMIDlet midlet) {
-		super("Über diese Anwendung");
+    public AboutForm(WandersmannMIDlet midlet) {
+        super("About Wandersmann");
 
-		this.midlet = midlet;
+        this.midlet = midlet;
 
-		append(new StringItem("Name", midlet.getAppProperty("MIDlet-Name")));
-		append(new StringItem("Version", midlet.getAppProperty("MIDlet-Version")));
-		append(new StringItem("Author", midlet.getAppProperty("MIDlet-Vendor")));
-		append(new Spacer(getWidth(), 5));
-		append("Geodata © OpenStreetMap and contributors, CC-BY-SA");
-		append(new Spacer(getWidth(), 5));
-		append("This program is free software: you can redistribute it and/or modify" +
-				" it under the terms of the GNU General Public License as published by " +
-				"the Free Software Foundation, either version 3 of the License, or " +
-				"(at your option) any later version.");
+        append(new StringItem("Name", midlet.getAppProperty("MIDlet-Name")));
+        append(new StringItem("Version", midlet.getAppProperty("MIDlet-Version")));
+        append(new StringItem("Author", midlet.getAppProperty("MIDlet-Vendor")));
+        append(new Spacer(getWidth(), 5));
+        append("Geodata � OpenStreetMap and contributors, CC-BY-SA");
+        append(new Spacer(getWidth(), 5));
+        append("This program is free software: you can redistribute it and/or modify"
+                + " it under the terms of the GNU General Public License as published by "
+                + "the Free Software Foundation, either version 3 of the License, or "
+                + "(at your option) any later version.");
 
-		addCommand(BACK);
-		setCommandListener(this);
-	}
+        addCommand(BACK);
+        setCommandListener(this);
+    }
 
-	public void commandAction(Command cmd, Displayable disp) {
-		if (cmd.equals(BACK)) {
-			Display.getDisplay(midlet).setCurrent(midlet.getMap());
-		}
-	}
+    public void commandAction(Command cmd, Displayable disp) {
+        if (cmd.equals(BACK)) {
+            Display.getDisplay(midlet).setCurrent(midlet.getMap());
+        }
+    }
 }
