@@ -22,11 +22,12 @@
 package wandersmann.osmbugs;
 
 /**
- *
+ * Object that can receive bugs.
+ * 
  * @author Christian Lins
  */
 public interface BugReceiver {
 
-	void receiveBug(Bug bug);
+    void receiveBug(Bug bug);
 
 }
