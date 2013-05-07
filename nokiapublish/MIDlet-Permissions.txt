@@ -1,0 +1,4 @@
+javax.microedition.io.Connector.http
+javax.microedition.io.Connector.https
+javax.microedition.io.Connector.file.write
+javax.microedition.io.Connector.file.read
