@@ -29,35 +29,36 @@ import javax.microedition.lcdui.Spacer;
 
 /**
  * Help form.
+ * 
  * @author Christian Lins
  */
 public class HelpForm extends Form implements CommandListener {
 
-	public static final Command BACK = new Command("Zurück", Command.BACK, 0);
-	private WandersmannMIDlet midlet;
+    public static final Command     BACK = new Command("Back", Command.BACK, 0);
+    private final WandersmannMIDlet midlet;
 
-	public HelpForm(WandersmannMIDlet midlet) {
-		super("Help");
-		setCommandListener(this);
+    public HelpForm(WandersmannMIDlet midlet) {
+        super("Help");
+        setCommandListener(this);
 
-		this.midlet = midlet;
+        this.midlet = midlet;
 
-		addCommand(BACK);
+        addCommand(BACK);
 
-		append("Press '5' to zoom in.");
-		append(new Spacer(getWidth(), 1));
-		append("Press '0' to zoom out.");
-		append(new Spacer(getWidth(), 1));
-		append("Press '4' and '6' to move map west and east.");
-		append(new Spacer(getWidth(), 1));
-		append("Press '2' and '8' to move map north and south.");
-		append(new Spacer(getWidth(), 1));
-		append("Press '1' to center the map to your current location if available.");
-	}
+        append("Press '5' to zoom in.");
+        append(new Spacer(getWidth(), 1));
+        append("Press '0' to zoom out.");
+        append(new Spacer(getWidth(), 1));
+        append("Press '4' and '6' to move map west and east.");
+        append(new Spacer(getWidth(), 1));
+        append("Press '2' and '8' to move map north and south.");
+        append(new Spacer(getWidth(), 1));
+        append("Press '1' to center the map to your current location if available.");
+    }
 
-	public void commandAction(Command cmd, Displayable disp) {
-		if (cmd.equals(BACK)) {
-			Display.getDisplay(midlet).setCurrent(midlet.getMap());
-		}
-	}
+    public void commandAction(Command cmd, Displayable disp) {
+        if (cmd.equals(BACK)) {
+            Display.getDisplay(midlet).setCurrent(midlet.getMap());
+        }
+    }
 }
